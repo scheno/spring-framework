@@ -125,6 +125,7 @@ public interface BeanFactory {
 	 * {@code myJndiObject} is a FactoryBean, getting {@code &myJndiObject}
 	 * will return the factory, not the instance returned by the factory.
 	 */
+	// 对 FactoryBean 的转义定义，因为如果使用 bean 的名字检索 FactoryBean 得到的对象是工厂生成的对象，如果需要得到工厂本身，需要转义
 	String FACTORY_BEAN_PREFIX = "&";
 
 
@@ -140,6 +141,7 @@ public interface BeanFactory {
 	 * @throws NoSuchBeanDefinitionException if there is no bean with the specified name
 	 * @throws BeansException if the bean could not be obtained
 	 */
+	// 根据 bean 的名字，获取在 IOC 容器中的 bean 实例
 	Object getBean(String name) throws BeansException;
 
 	/**
@@ -157,6 +159,7 @@ public interface BeanFactory {
 	 * @throws BeanNotOfRequiredTypeException if the bean is not of the required type
 	 * @throws BeansException if the bean could not be created
 	 */
+    // 根据 bean 的名字和 Class 类型来得到 bean 实例，增加了类型安全验证机制。
 	<T> T getBean(String name, Class<T> requiredType) throws BeansException;
 
 	/**
@@ -260,6 +263,7 @@ public interface BeanFactory {
 	 * @param name the name of the bean to query
 	 * @return whether a bean with the given name is present
 	 */
+	// 提供对 bean 的检索，看看是否在 IOC 容器有这个名字的 bean
 	boolean containsBean(String name);
 
 	/**
@@ -277,6 +281,7 @@ public interface BeanFactory {
 	 * @see #getBean
 	 * @see #isPrototype
 	 */
+	// 根据 bean 名字得到 bean 实例，并同时判断这个 bean 是不是单例
 	boolean isSingleton(String name) throws NoSuchBeanDefinitionException;
 
 	/**
@@ -346,6 +351,7 @@ public interface BeanFactory {
 	 * @see #getBean
 	 * @see #isTypeMatch
 	 */
+	// 得到 bean 实例的 Class 类型
 	@Nullable
 	Class<?> getType(String name) throws NoSuchBeanDefinitionException;
 
@@ -381,6 +387,7 @@ public interface BeanFactory {
 	 * @return the aliases, or an empty array if none
 	 * @see #getBean
 	 */
+	// 得到 bean 的别名，如果根据别名检索，那么其原名也会被检索出来
 	String[] getAliases(String name);
 
 }
