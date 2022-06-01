@@ -134,6 +134,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * @see AnnotationBeanNameGenerator
 	 * @see FullyQualifiedAnnotationBeanNameGenerator
 	 */
+	// 为容器的注解 Bean 读取器和注解 Bean 扫描器设置 Bean 名称产生器
 	public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
 		this.reader.setBeanNameGenerator(beanNameGenerator);
 		this.scanner.setBeanNameGenerator(beanNameGenerator);
@@ -147,6 +148,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * <p>Any call to this method must occur prior to calls to {@link #register(Class...)}
 	 * and/or {@link #scan(String...)}.
 	 */
+	// 为容器的注解 Bean 读取器和注解 Bean 扫描器设置作用范围元信息解析器
 	public void setScopeMetadataResolver(ScopeMetadataResolver scopeMetadataResolver) {
 		this.reader.setScopeMetadataResolver(scopeMetadataResolver);
 		this.scanner.setScopeMetadataResolver(scopeMetadataResolver);
@@ -166,6 +168,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * @see #scan(String...)
 	 * @see #refresh()
 	 */
+	// 为容器注册一个要被处理的注解 Bean，新注册的 Bean，必须手动调用容器的
+	// refresh()方法刷新容器，触发容器对新注册的 Bean 的处理
 	@Override
 	public void register(Class<?>... componentClasses) {
 		Assert.notEmpty(componentClasses, "At least one component class must be specified");
@@ -183,6 +187,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * @see #register(Class...)
 	 * @see #refresh()
 	 */
+	//扫描指定包路径及其子包下的注解类，为了使新添加的类被处理，必须手动调用
+	// refresh()方法刷新容器
 	@Override
 	public void scan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
