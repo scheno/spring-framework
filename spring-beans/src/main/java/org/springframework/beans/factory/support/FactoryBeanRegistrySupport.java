@@ -93,11 +93,17 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 * @throws BeanCreationException if FactoryBean object creation failed
 	 * @see org.springframework.beans.factory.FactoryBean#getObject()
 	 */
+	// Bean 工厂生产 Bean 实例对象
 	protected Object getObjectFromFactoryBean(FactoryBean<?> factory, String beanName, boolean shouldPostProcess) {
+		// Bean 工厂是单态模式，并且 Bean 工厂缓存中存在指定名称的 Bean 实例对象
 		if (factory.isSingleton() && containsSingleton(beanName)) {
+			// 多线程同步，以防止数据不一致
 			synchronized (getSingletonMutex()) {
+				// 直接从 Bean 工厂缓存中获取指定名称的 Bean 实例对象
 				Object object = this.factoryBeanObjectCache.get(beanName);
+				// Bean 工厂缓存中没有指定名称的实例对象，则生产该实例对象
 				if (object == null) {
+					// 调用 Bean 工厂的 getObject 方法生产指定 Bean 的实例对象
 					object = doGetObjectFromFactoryBean(factory, beanName);
 					// Only post-process and store if not put there already during getObject() call above
 					// (e.g. because of circular reference processing triggered by custom getBean calls)
@@ -124,6 +130,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 							}
 						}
 						if (containsSingleton(beanName)) {
+							// 将生产的实例对象添加到 Bean 工厂缓存中
 							this.factoryBeanObjectCache.put(beanName, object);
 						}
 					}
@@ -131,6 +138,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 				return object;
 			}
 		}
+		// 调用 Bean 工厂的 getObject 方法生产指定 Bean 的实例对象
 		else {
 			Object object = doGetObjectFromFactoryBean(factory, beanName);
 			if (shouldPostProcess) {
@@ -153,12 +161,15 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 * @throws BeanCreationException if FactoryBean object creation failed
 	 * @see org.springframework.beans.factory.FactoryBean#getObject()
 	 */
+	// 调用 Bean 工厂的 getObject 方法生产指定 Bean 的实例对象
 	private Object doGetObjectFromFactoryBean(FactoryBean<?> factory, String beanName) throws BeanCreationException {
 		Object object;
 		try {
 			if (System.getSecurityManager() != null) {
 				AccessControlContext acc = getAccessControlContext();
 				try {
+					// 实现 PrivilegedExceptionAction 接口的匿名内置类
+					// 根据 JVM 检查权限，然后决定 BeanFactory 创建实例对象
 					object = AccessController.doPrivileged((PrivilegedExceptionAction<Object>) factory::getObject, acc);
 				}
 				catch (PrivilegedActionException pae) {
@@ -166,6 +177,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 				}
 			}
 			else {
+				// 调用 BeanFactory 接口实现类的创建对象方法
 				object = factory.getObject();
 			}
 		}
@@ -178,6 +190,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 
 		// Do not accept a null value for a FactoryBean that's not fully
 		// initialized yet: Many FactoryBeans just return null then.
+		// 创建出来的实例对象为 null，或者因为单态对象正在创建而返回 null
 		if (object == null) {
 			if (isSingletonCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(

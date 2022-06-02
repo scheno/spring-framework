@@ -47,6 +47,11 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializable {
 
+	/**
+	 * 从提供的配置实例 config 中获取 advisor 列表,遍历处理这些 advisor.如果是 IntroductionAdvisor,
+	 * 则判断此 Advisor 能否应用到目标类 targetClass 上.如果是 PointcutAdvisor,则判断
+	 * 此 Advisor 能否应用到目标方法 Method 上.将满足条件的 Advisor 通过 AdvisorAdaptor 转化成 Interceptor 列表返回.
+	 */
 	@Override
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(
 			Advised config, Method method, @Nullable Class<?> targetClass) {
@@ -57,6 +62,7 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 		Advisor[] advisors = config.getAdvisors();
 		List<Object> interceptorList = new ArrayList<>(advisors.length);
 		Class<?> actualClass = (targetClass != null ? targetClass : method.getDeclaringClass());
+		// 查看是否包含 IntroductionAdvisor
 		Boolean hasIntroductions = null;
 
 		for (Advisor advisor : advisors) {
@@ -64,10 +70,12 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 				// Add it conditionally.
 				PointcutAdvisor pointcutAdvisor = (PointcutAdvisor) advisor;
 				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
+					// 检查当前 advisor 的 pointcut 是否可以匹配当前方法
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
 					boolean match;
 					if (mm instanceof IntroductionAwareMethodMatcher) {
 						if (hasIntroductions == null) {
+							// 查看是否包含 IntroductionAdvisor
 							hasIntroductions = hasMatchingIntroductions(advisors, actualClass);
 						}
 						match = ((IntroductionAwareMethodMatcher) mm).matches(method, actualClass, hasIntroductions);
@@ -76,6 +84,8 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 						match = mm.matches(method, actualClass);
 					}
 					if (match) {
+						// 这个地方这两个方法的位置可以互换下
+						// 将 Advisor 转化成 Interceptor
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
 						if (mm.isRuntime()) {
 							// Creating a new object instance in the getInterceptors() method

@@ -71,6 +71,7 @@ public interface BeanPostProcessor {
 	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
 	 */
 	@Nullable
+	// 为在 Bean 的初始化前提供回调入口
 	default Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
 	}
@@ -97,6 +98,7 @@ public interface BeanPostProcessor {
 	 * @see org.springframework.beans.factory.FactoryBean
 	 */
 	@Nullable
+	// 为在 Bean 的初始化之后提供回调入口
 	default Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		return bean;
 	}

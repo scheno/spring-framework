@@ -118,6 +118,11 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		return getProxy(ClassUtils.getDefaultClassLoader());
 	}
 
+	/**
+	 * 获取代理类要实现的接口,除了 Advised 对象中配置的,还会加上 SpringProxy, Advised(opaque=false)
+	 * 检查上面得到的接口中有没有定义 equals 或者 hashcode 的接口
+	 * 调用 Proxy.newProxyInstance 创建代理对象
+	 */
 	@Override
 	public Object getProxy(@Nullable ClassLoader classLoader) {
 		if (logger.isTraceEnabled()) {
@@ -164,14 +169,17 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		Object target = null;
 
 		try {
+			// eqauls()方法，具目标对象未实现此方法
 			if (!this.equalsDefined && AopUtils.isEqualsMethod(method)) {
 				// The target does not implement the equals(Object) method itself.
 				return equals(args[0]);
 			}
+			// hashCode()方法，具目标对象未实现此方法
 			else if (!this.hashCodeDefined && AopUtils.isHashCodeMethod(method)) {
 				// The target does not implement the hashCode() method itself.
 				return hashCode();
 			}
+			// Advised 接口或者其父接口中定义的方法,直接反射调用,不应用通知
 			else if (method.getDeclaringClass() == DecoratingProxy.class) {
 				// There is only getDecoratedClass() declared -> dispatch to proxy config.
 				return AopProxyUtils.ultimateTargetClass(this.advised);
@@ -192,14 +200,17 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 
 			// Get as late as possible to minimize the time we "own" the target,
 			// in case it comes from a pool.
+			// 获得目标对象的类
 			target = targetSource.getTarget();
 			Class<?> targetClass = (target != null ? target.getClass() : null);
 
 			// Get the interception chain for this method.
+			// 获取可以应用到此方法上的 Interceptor 列表
 			List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 
 			// Check whether we have any advice. If we don't, we can fallback on direct
 			// reflective invocation of the target, and avoid creating a MethodInvocation.
+			// 如果没有可以应用到此方法的通知(Interceptor)，此直接反射调用 Method.invoke(target, args)
 			if (chain.isEmpty()) {
 				// We can skip creating a MethodInvocation: just invoke the target directly
 				// Note that the final invoker must be an InvokerInterceptor so we know it does
@@ -207,6 +218,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
 				retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
 			}
+			// 创建 MethodInvocation
 			else {
 				// We need to create a method invocation...
 				MethodInvocation invocation =
