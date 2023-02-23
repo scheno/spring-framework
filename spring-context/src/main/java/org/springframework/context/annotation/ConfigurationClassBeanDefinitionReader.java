@@ -61,6 +61,9 @@ import org.springframework.util.StringUtils;
  * Reads a given fully-populated set of ConfigurationClass instances, registering bean
  * definitions with the given {@link BeanDefinitionRegistry} based on its contents.
  *
+ * 读取一组带有完整解析数据的ConfigurationClass集合，基于他们所携带的信息向给定BeanDefinitionRegistry
+ * 注册其中所有的bean定义。
+ *
  * <p>This class was modeled after the {@link BeanDefinitionReader} hierarchy, but does
  * not implement/extend any of its artifacts as a set of configuration classes is not a
  * {@link Resource}.
@@ -98,10 +101,13 @@ class ConfigurationClassBeanDefinitionReader {
 
 	private final ImportRegistry importRegistry;
 
+	// 对@Conditional注解求值的工具类
 	private final ConditionEvaluator conditionEvaluator;
 
 
 	/**
+	 * 创建一个新的往指定的BeanDefinitionRegistry填充bean定义的
+	 * ConfigurationClassBeanDefinitionReader 实例
 	 * Create a new {@link ConfigurationClassBeanDefinitionReader} instance
 	 * that will be used to populate the given {@link BeanDefinitionRegistry}.
 	 */
@@ -122,15 +128,21 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * Read {@code configurationModel}, registering bean definitions
 	 * with the registry based on its contents.
+	 * configurationModel 是一组ConfigurationClass，表示一组配置类,该方法从中读取bean定义
+	 * 并注册到bean容器
 	 */
 	public void loadBeanDefinitions(Set<ConfigurationClass> configurationModel) {
 		TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
 		for (ConfigurationClass configClass : configurationModel) {
+			// 遍历处理参数configurationModel中的每个配置类
 			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
 		}
 	}
 
 	/**
+	 * 从指定的一个配置类ConfigurationClass中提取bean定义信息并注册bean定义到bean容器 :
+	 * 1. 配置类本身要注册为bean定义
+	 * 2. 配置类中的@Bean注解方法要注册为配置类
 	 * Read a particular {@link ConfigurationClass}, registering bean definitions
 	 * for the class itself and all of its {@link Bean} methods.
 	 */
@@ -147,18 +159,24 @@ class ConfigurationClassBeanDefinitionReader {
 		}
 
 		if (configClass.isImported()) {
+			// 如果这是一个通过import机制被导入进来的配置类，将它本身作为一个bean定义注册到容器
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
+			// 现在把配置类里面@Bean注解的方法作为bean定义注册到容器
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
+		// 从配置类导入的bean定义资源中获取bean定义信息并注册到容器
+		// 比如导入的xml或者groovy bean定义文件
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		// 从配置类导入的ImportBeanDefinitionRegistrar中获取bean定义信息并注册到容器
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
 	/**
 	 * Register the {@link Configuration} class itself as a bean definition.
+	 * 配置类本身作为bean定义注册到容器
 	 */
 	private void registerBeanDefinitionForImportedConfigurationClass(ConfigurationClass configClass) {
 		AnnotationMetadata metadata = configClass.getMetadata();
@@ -182,6 +200,7 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * Read the given {@link BeanMethod}, registering bean definitions
 	 * with the BeanDefinitionRegistry based on its contents.
+	 * @Bean注解的配置类方法作为bean定义注册到bean容器
 	 */
 	@SuppressWarnings("deprecation")  // for RequiredAnnotationBeanPostProcessor.SKIP_REQUIRED_CHECK_ATTRIBUTE
 	private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
@@ -224,7 +243,7 @@ class ConfigurationClassBeanDefinitionReader {
 		beanDef.setSource(this.sourceExtractor.extractSource(metadata, configClass.getResource()));
 
 		if (metadata.isStatic()) {
-			// static @Bean method
+			// static @Bean method 静态@Bean方法
 			if (configClass.getMetadata() instanceof StandardAnnotationMetadata) {
 				beanDef.setBeanClass(((StandardAnnotationMetadata) configClass.getMetadata()).getIntrospectedClass());
 			}
@@ -234,7 +253,7 @@ class ConfigurationClassBeanDefinitionReader {
 			beanDef.setUniqueFactoryMethodName(methodName);
 		}
 		else {
-			// instance @Bean method
+			// instance @Bean method 实例成员@Bean方法
 			beanDef.setFactoryBeanName(configClass.getBeanName());
 			beanDef.setUniqueFactoryMethodName(methodName);
 		}
@@ -356,6 +375,7 @@ class ConfigurationClassBeanDefinitionReader {
 			if (BeanDefinitionReader.class == readerClass) {
 				if (StringUtils.endsWithIgnoreCase(resource, ".groovy")) {
 					// When clearly asking for Groovy, that's what they'll get...
+					// 如果是groovy bean定义文件采用如下读取类
 					readerClass = GroovyBeanDefinitionReader.class;
 				}
 				else if (shouldIgnoreXml) {
@@ -363,6 +383,7 @@ class ConfigurationClassBeanDefinitionReader {
 				}
 				else {
 					// Primarily ".xml" files but for any other extension as well
+					// 如果是xml bean定义文件采用如下读取类
 					readerClass = XmlBeanDefinitionReader.class;
 				}
 			}
@@ -387,10 +408,12 @@ class ConfigurationClassBeanDefinitionReader {
 			}
 
 			// TODO SPR-6310: qualify relative path locations as done in AbstractContextLoader.modifyLocations
+			// 从导入的文件中读取bean定义并注册到bean容器
 			reader.loadBeanDefinitions(resource);
 		});
 	}
 
+	// 对参数中所有ImportBeanDefinitionRegistrar实例，逐一调用其方法registerBeanDefinitions()
 	private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
 		registrars.forEach((registrar, metadata) ->
 				registrar.registerBeanDefinitions(metadata, this.registry, this.importBeanNameGenerator));
@@ -462,6 +485,7 @@ class ConfigurationClassBeanDefinitionReader {
 
 
 	/**
+	 * 用于跟踪某个配置类是否需要被忽略
 	 * Evaluate {@code @Conditional} annotations, tracking results and taking into
 	 * account 'imported by'.
 	 */
