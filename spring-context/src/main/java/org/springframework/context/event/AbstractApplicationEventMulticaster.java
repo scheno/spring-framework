@@ -210,6 +210,7 @@ public abstract class AbstractApplicationEventMulticaster
 		}
 
 		if (existingRetriever != null) {
+			// 获取所有的监听者
 			Collection<ApplicationListener<?>> result = existingRetriever.getApplicationListeners();
 			if (result != null) {
 				return result;

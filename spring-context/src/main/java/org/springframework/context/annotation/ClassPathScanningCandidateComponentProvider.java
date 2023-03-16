@@ -87,11 +87,13 @@ import org.springframework.util.ClassUtils;
  */
 public class ClassPathScanningCandidateComponentProvider implements EnvironmentCapable, ResourceLoaderAware {
 
+	// 所要扫描的资源的路径pattern缺省值
 	static final String DEFAULT_RESOURCE_PATTERN = "**/*.class";
 
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	// 所要扫描的资源的路径pattern，初始化为缺省值
 	private String resourcePattern = DEFAULT_RESOURCE_PATTERN;
 
 	// 保存过滤规则要包含的注解，即 Spring 默认的@Component、@Repository、@Service、
@@ -104,12 +106,15 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	@Nullable
 	private Environment environment;
 
+	// 条件表达式求值器/评估器
 	@Nullable
 	private ConditionEvaluator conditionEvaluator;
 
+	// 资源路径解析器，能从指定的包路径，根据指定的pattern，加载相应的Resource
 	@Nullable
 	private ResourcePatternResolver resourcePatternResolver;
 
+	// 工厂类，用于生成读取类元数据的 MetadataReader
 	@Nullable
 	private MetadataReaderFactory metadataReaderFactory;
 
@@ -287,6 +292,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 
 	private ResourcePatternResolver getResourcePatternResolver() {
 		if (this.resourcePatternResolver == null) {
+			// 缺省使用  PathMatchingResourcePatternResolver
 			this.resourcePatternResolver = new PathMatchingResourcePatternResolver();
 		}
 		return this.resourcePatternResolver;
@@ -308,6 +314,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 */
 	public final MetadataReaderFactory getMetadataReaderFactory() {
 		if (this.metadataReaderFactory == null) {
+			// 缺省使用带有缓存能力的  CachingMetadataReaderFactory
 			this.metadataReaderFactory = new CachingMetadataReaderFactory();
 		}
 		return this.metadataReaderFactory;
@@ -325,6 +332,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 			return addCandidateComponentsFromIndex(this.componentsIndex, basePackage);
 		}
 		else {
+			// 从指定的包内扫描目标组件bean
 			return scanCandidateComponents(basePackage);
 		}
 	}
@@ -432,20 +440,32 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
 		try {
+			// 初始化在指定包内扫描资源的pattern ：packageSearchPath  ,
+			// 缺省情况下，这里只关注所有的java类文件，也就是.class结尾的字节码文件
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			// 获取匹配 packageSearchPath pattern 的资源
 			Resource[] resources = getResourcePatternResolver().getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
+			// 遍历每个找到的类对应的Resource 对象，获取其 MetadataReader
+			// 判断这是否是一个符合包含过滤器，并且不在排斥过滤器内的bean组件定义类
 			for (Resource resource : resources) {
 				if (traceEnabled) {
 					logger.trace("Scanning " + resource);
 				}
 				try {
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
+					// 判断这是否是一个符合候选条件的bean组件定义类
+					// 如果符合条件的话，将其添加到候选类集合 : candidates
+
+					// 第一次判断 : 判断这是否是一个符合包含过滤器，并且不在排斥过滤器内的bean组件定义类
 					if (isCandidateComponent(metadataReader)) {
 						ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 						sbd.setSource(resource);
+						// 第二次判断 : 构造出BD之后再次检测是否符合候选条件
+						// 1. 独立类 + 具体实现类 或者
+						// 2. 独立类 + 抽象类 + 带有使用注解 Lookup 的方法
 						if (isCandidateComponent(sbd)) {
 							if (debugEnabled) {
 								logger.debug("Identified candidate component class: " + resource);
@@ -503,6 +523,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	// 判断元信息读取器读取的类是否符合容器定义的注解过滤规则
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
 		// 如果读取的类的注解在排除注解过滤规则中，返回 false
+		// 注意，这里排斥过滤器优先被使用
 		for (TypeFilter tf : this.excludeFilters) {
 			if (tf.match(metadataReader, getMetadataReaderFactory())) {
 				return false;
