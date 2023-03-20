@@ -240,8 +240,11 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 	@Override
 	protected Object doGetTransaction() {
+		// 创建一个DataSourceTransactionObject
 		DataSourceTransactionObject txObject = new DataSourceTransactionObject();
+		// 设置本次事务中是否允许保存点, isNestedTransactionAllowed() 为true
 		txObject.setSavepointAllowed(isNestedTransactionAllowed());
+		// 这里是根据数据库链接属性去当前线程中获取缓存，如果当前线程中不存在，那么就返回null
 		ConnectionHolder conHolder =
 				(ConnectionHolder) TransactionSynchronizationManager.getResource(obtainDataSource());
 		txObject.setConnectionHolder(conHolder, false);
@@ -262,6 +265,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 		try {
 			if (!txObject.hasConnectionHolder() ||
 					txObject.getConnectionHolder().isSynchronizedWithTransaction()) {
+				// 获取链接
 				Connection newCon = obtainDataSource().getConnection();
 				if (logger.isDebugEnabled()) {
 					logger.debug("Acquired Connection [" + newCon + "] for JDBC transaction");
@@ -284,6 +288,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 				if (logger.isDebugEnabled()) {
 					logger.debug("Switching JDBC Connection [" + con + "] to manual commit");
 				}
+				// 设置为不自动提交   这就是事务开启的原因  让他不自动提交  交由我们自己手动提交事务
 				con.setAutoCommit(false);
 			}
 
@@ -292,6 +297,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 			int timeout = determineTimeout(definition);
 			if (timeout != TransactionDefinition.TIMEOUT_DEFAULT) {
+				// 如果是个新事务，那么把这个事务已链接信息为key 事务链接为value 绑定到当前线程
 				txObject.getConnectionHolder().setTimeoutInSeconds(timeout);
 			}
 

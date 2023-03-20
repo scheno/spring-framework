@@ -1466,15 +1466,19 @@ public class BeanDefinitionParserDelegate {
 	 */
 	@Nullable
 	public BeanDefinition parseCustomElement(Element ele, @Nullable BeanDefinition containingBd) {
+		// 这个namespaceUri 在tx标签解析时值为：http://www.springframework.org/schema/tx
+		// 因为xml配置中顶部beans xmlns配置了tx标签的解析规范
 		String namespaceUri = getNamespaceURI(ele);
 		if (namespaceUri == null) {
 			return null;
 		}
+		// 根据namespaceUri 匹配他的标签处理器
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		// 根据匹配到的处理器进行标签解析
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 

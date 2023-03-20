@@ -127,9 +127,15 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 		int deepest = Integer.MAX_VALUE;
 
 		if (this.rollbackRules != null) {
+			// 这个this.rollbackRules 就是我们配置的具体的异常
+			// 比如@Transactional的rollbackFor和noRollbackFor 他们都是RollbackRuleAttribute
+			// 只不过区分为RollbackRuleAttribute 和 NoRollbackRuleAttribute  也就是回滚的异常和不会滚的异常
 			for (RollbackRuleAttribute rule : this.rollbackRules) {
+				// 循环进行深度匹配   其实就是看异常是不是和配置的异常匹配 并从子类往上级的父类进行追踪
+				// 每次都是先匹配回滚的  再匹配不会滚的  同时从子类开始匹配(子类优先)
 				int depth = rule.getDepth(ex);
 				if (depth >= 0 && depth < deepest) {
+					// 如果匹配到   那么就设置匹配成功的记录
 					deepest = depth;
 					winner = rule;
 				}
@@ -138,9 +144,11 @@ public class RuleBasedTransactionAttribute extends DefaultTransactionAttribute i
 
 		// User superclass behavior (rollback on unchecked) if no rule matches.
 		if (winner == null) {
+			// 如果没匹配到  那么使用默认的规则  也就是DefaultTransactionAttribute的rollbackOn
 			return super.rollbackOn(ex);
 		}
 
+		// 最后再看匹配到的是不是NoRollbackRuleAttribute(不需要回滚的)  如果是那么就不会滚
 		return !(winner instanceof NoRollbackRuleAttribute);
 	}
 
