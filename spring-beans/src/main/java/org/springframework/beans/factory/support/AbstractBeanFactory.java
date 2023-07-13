@@ -1904,7 +1904,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		// 容器已经得到了 Bean 实例对象，这个实例对象可能是一个普通的 Bean，
 		// 也可能是一个工厂 Bean，如果是一个工厂 Bean，则使用它创建一个 Bean 实例对象，
 		// 如果调用本身就想获得一个容器的引用，则指定返回这个工厂 Bean 实例对象
-		// 如果指定的名称是容器的解引用(dereference，即是对象本身而非内存地址)，
+		// 如果指定的名称是容器的解引用(dereference，既是对象本身而非内存地址)，
 		// 且 Bean 实例也不是创建 Bean 实例对象的工厂 Bean
 		if (BeanFactoryUtils.isFactoryDereference(name)) {
 			if (beanInstance instanceof NullBean) {

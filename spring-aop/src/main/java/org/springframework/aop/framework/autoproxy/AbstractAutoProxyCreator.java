@@ -98,6 +98,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		implements SmartInstantiationAwareBeanPostProcessor, BeanFactoryAware {
 
 	/**
+	 * 空对象，表示不需要进行代理
 	 * Convenience constant for subclasses: Return value for "do not proxy".
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
@@ -105,6 +106,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	protected static final Object[] DO_NOT_PROXY = null;
 
 	/**
+	 * 空的数组，表示需要进行代理，但是没有解析出 Advice
 	 * Convenience constant for subclasses: Return value for
 	 * "proxy without additional interceptors, just the common ones".
 	 * @see #getAdvicesAndAdvisorsForBean
@@ -115,32 +117,59 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	/** Default is global AdvisorAdapterRegistry. */
+	/** Default is global AdvisorAdapterRegistry.
+	 * DefaultAdvisorAdapterRegistry 单例，Advisor适配器注册中心 */
 	private AdvisorAdapterRegistry advisorAdapterRegistry = GlobalAdvisorAdapterRegistry.getInstance();
 
 	/**
 	 * Indicates whether or not the proxy should be frozen. Overridden from super
 	 * to prevent the configuration from becoming frozen too early.
 	 */
+	/** 是否冻结代理对象 */
 	private boolean freezeProxy = false;
 
-	/** Default is no common interceptors. */
+	/** Default is no common interceptors.*/
+	/** 公共的拦截器对象*/
 	private String[] interceptorNames = new String[0];
 
+	/** 是否将 `interceptorNames` 拦截器放在最前面 */
 	private boolean applyCommonInterceptorsFirst = true;
 
+	/** 自定义的 TargetSource 创建器 */
 	@Nullable
 	private TargetSourceCreator[] customTargetSourceCreators;
 
 	@Nullable
 	private BeanFactory beanFactory;
 
+	/**
+	 * 保存自定义 {@link TargetSource} 对象的 Bean 的名称
+	 */
 	private final Set<String> targetSourcedBeans = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
+	/**
+	 * 保存提前创建代理对象的 Bean
+	 * key：cacheKey（Bean 的名称或者 Class 对象）
+	 * value：Bean 对象
+	 *
+	 * Spring AOP 的设计之初是让 Bean 在完全创建好后才完成 AOP 代理，如果出现了循环依赖，则需要提前（实例化后还未初始化）创建代理对象
+	 * 那么需要先保存提前创建代理对象的 Bean，这样在后面可以防止再次创建代理对象
+	 */
 	private final Map<Object, Object> earlyProxyReferences = new ConcurrentHashMap<>(16);
 
+	/**
+	 * 保存代理对象的 Class 对象
+	 * key：cacheKey（Bean 的名称或者 Class 对象）
+	 * value：代理对象的 Class 对象（目标类的子类）
+	 *
+	 */
 	private final Map<Object, Class<?>> proxyTypes = new ConcurrentHashMap<>(16);
 
+	/**
+	 * 保存是否需要创建代理对象的信息
+	 * key：cacheKey（Bean 的名称或者 Class 对象）
+	 * value：是否需要创建代理对象，false 表示不需要创建代理对象，true 表示已创建代理对象
+	 */
 	private final Map<Object, Boolean> advisedBeans = new ConcurrentHashMap<>(256);
 
 
@@ -237,10 +266,24 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return null;
 	}
 
+	/**
+	 * 该方法对早期对象（提前暴露的对象，已实例化还未初始化）进行处理
+	 * 参考 {@link org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#getEarlyBeanReference }
+	 *
+	 * @param bean     the raw bean instance
+	 * @param beanName the name of the bean
+	 * @return 早期对象（可能是一个代理对象）
+	 */
 	@Override
 	public Object getEarlyBeanReference(Object bean, String beanName) {
+		// <1> 获取这个 Bean 的缓存 Key，默认为 Bean 的名称，没有则取其对应的 Class 对象
 		Object cacheKey = getCacheKey(bean.getClass(), beanName);
+		/*
+		 * <2> 将当前 Bean 保存至 earlyProxyReferences 集合（早期的代理应用对象）
+		 * 也就是说当这个 Bean 出现循环依赖了，在实例化后就创建了代理对象（如果有必要）
+		 */
 		this.earlyProxyReferences.put(cacheKey, bean);
+		// <3> 为这个 Bean 创建代理对象（如果有必要的话）
 		return wrapIfNecessary(bean, beanName, cacheKey);
 	}
 
