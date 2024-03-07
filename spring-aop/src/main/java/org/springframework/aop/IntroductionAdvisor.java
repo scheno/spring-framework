@@ -38,6 +38,7 @@ public interface IntroductionAdvisor extends Advisor, IntroductionInfo {
 	 * matching doesn't make sense to introductions.
 	 * @return the class filter
 	 */
+	// 获取类加载器，因为没有 Pointcut 切点，则提供一个类过滤器
 	ClassFilter getClassFilter();
 
 	/**
@@ -46,6 +47,7 @@ public interface IntroductionAdvisor extends Advisor, IntroductionInfo {
 	 * @throws IllegalArgumentException if the advised interfaces can't be
 	 * implemented by the introduction advice
 	 */
+	// 校验是否实现 IntroductionInfo 中的接口
 	void validateInterfaces() throws IllegalArgumentException;
 
 }

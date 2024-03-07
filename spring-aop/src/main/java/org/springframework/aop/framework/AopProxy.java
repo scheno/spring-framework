@@ -38,6 +38,7 @@ public interface AopProxy {
 	 * @return the new proxy object (never {@code null})
 	 * @see Thread#getContextClassLoader()
 	 */
+	// 创建一个代理对象
 	Object getProxy();
 
 	/**
@@ -50,6 +51,7 @@ public interface AopProxy {
 	 * (or {@code null} for the low-level proxy facility's default)
 	 * @return the new proxy object (never {@code null})
 	 */
+	// 创建一个代理对象，传入指定的 ClassLoader 类加载器
 	Object getProxy(@Nullable ClassLoader classLoader);
 
 }

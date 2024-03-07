@@ -49,6 +49,7 @@ public interface Joinpoint {
 	 * @return see the children interfaces' proceed definition
 	 * @throws Throwable if the joinpoint throws an exception
 	 */
+	// 执行方法调用器中的下一个拦截器，执行完所有的拦截器则执行目标方法
 	@Nullable
 	Object proceed() throws Throwable;
 
@@ -57,6 +58,7 @@ public interface Joinpoint {
 	 * <p>For instance, the target object for an invocation.
 	 * @return the object (can be null if the accessible object is static)
 	 */
+	// 返回目标对象
 	@Nullable
 	Object getThis();
 
@@ -65,6 +67,7 @@ public interface Joinpoint {
 	 * <p>The static part is an accessible object on which a chain of
 	 * interceptors are installed.
 	 */
+	// 返回目标方法
 	@Nonnull
 	AccessibleObject getStaticPart();
 

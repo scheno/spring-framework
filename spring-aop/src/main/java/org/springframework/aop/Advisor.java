@@ -40,6 +40,7 @@ public interface Advisor {
 	 * {@link #getAdvice()} if no proper advice has been configured (yet).
 	 * @since 5.0
 	 */
+	// 空的 Advice
 	Advice EMPTY_ADVICE = new Advice() {};
 
 
@@ -52,6 +53,7 @@ public interface Advisor {
 	 * @see ThrowsAdvice
 	 * @see AfterReturningAdvice
 	 */
+	// 获取 Advice
 	Advice getAdvice();
 
 	/**
@@ -64,6 +66,7 @@ public interface Advisor {
 	 * proxy creation to ensure that Advisors have the correct lifecycle model.
 	 * @return whether this advice is associated with a particular target instance
 	 */
+	// 返回这个 Advice 是否有一个指定的目标实例对象，默认都是 true
 	boolean isPerInstance();
 
 }

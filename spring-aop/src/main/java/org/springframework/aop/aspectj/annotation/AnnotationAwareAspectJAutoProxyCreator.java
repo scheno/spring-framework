@@ -49,12 +49,21 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorAutoProxyCreator {
 
+	/**
+	 * 用于指定哪些 Bean 能够作为 Advisor
+	 */
 	@Nullable
 	private List<Pattern> includePatterns;
 
+	/**
+	 * 解析 AspectJ 注解的 Advisor 工厂
+	 */
 	@Nullable
 	private AspectJAdvisorFactory aspectJAdvisorFactory;
 
+	/**
+	 * 构建器模式，用于构建  AspectJ 注解的 Advisor
+	 */
 	@Nullable
 	private BeanFactoryAspectJAdvisorsBuilder aspectJAdvisorsBuilder;
 
@@ -77,10 +86,13 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 
 	@Override
 	protected void initBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+		// 初始化 BeanFactoryAdvisorRetrievalHelperAdapter
 		super.initBeanFactory(beanFactory);
+		// 初始化 ReflectiveAspectJAdvisorFactory
 		if (this.aspectJAdvisorFactory == null) {
 			this.aspectJAdvisorFactory = new ReflectiveAspectJAdvisorFactory(beanFactory);
 		}
+		// 初始化 BeanFactoryAspectJAdvisorsBuilderAdapter
 		this.aspectJAdvisorsBuilder =
 				new BeanFactoryAspectJAdvisorsBuilderAdapter(beanFactory, this.aspectJAdvisorFactory);
 	}
@@ -89,11 +101,17 @@ public class AnnotationAwareAspectJAutoProxyCreator extends AspectJAwareAdvisorA
 	@Override
 	protected List<Advisor> findCandidateAdvisors() {
 		// Add all the Spring advisors found according to superclass rules.
+		// <1> 调用父类方法，从 IoC 容器中查找所有的 Advisor 类型的 Bean
 		List<Advisor> advisors = super.findCandidateAdvisors();
 		// Build Advisors for all AspectJ aspects in the bean factory.
+		// <2> 如果 AspectJ 解析器不为空，默认为 BeanFactoryAspectJAdvisorsBuilderAdapter
 		if (this.aspectJAdvisorsBuilder != null) {
+			// 解析所有带有 @AspectJ 注解的 Bean
+			// 其中带有 @Before|@After|@Around|@AfterReturning|@AfterThrowing 注解的方法会被解析成一个 PointcutAdvisor 对象
+			// 将解析出来的所有 Advisor 添加至 `advisors` 中
 			advisors.addAll(this.aspectJAdvisorsBuilder.buildAspectJAdvisors());
 		}
+		// <3> 返回 `advisors` 集合（当前 IoC 容器中解析出来的所有的 Advisor 对象）
 		return advisors;
 	}
 

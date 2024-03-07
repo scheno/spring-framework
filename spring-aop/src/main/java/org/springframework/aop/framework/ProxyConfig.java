@@ -33,15 +33,17 @@ public class ProxyConfig implements Serializable {
 	/** use serialVersionUID from Spring 1.2 for interoperability. */
 	private static final long serialVersionUID = -8409359707199703185L;
 
-
+	/** 是否使用类代理 */
 	private boolean proxyTargetClass = false;
 
 	private boolean optimize = false;
 
 	boolean opaque = false;
 
+	/** 是否暴露代理对象 */
 	boolean exposeProxy = false;
 
+	/** 配置是否被冻结 */
 	private boolean frozen = false;
 
 

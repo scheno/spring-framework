@@ -34,6 +34,7 @@ public interface Invocation extends Joinpoint {
 	 * array to change the arguments.
 	 * @return the argument of the invocation
 	 */
+	// 获取参数数组
 	@Nonnull
 	Object[] getArguments();
 

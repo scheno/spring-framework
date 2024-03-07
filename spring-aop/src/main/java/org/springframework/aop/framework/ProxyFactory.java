@@ -107,6 +107,8 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * @return the proxy object
 	 */
 	public Object getProxy(@Nullable ClassLoader classLoader) {
+		// <1> 先创建一个 AOP 代理类（JdkDynamicAopProxy 或者 ObjenesisCglibAopProxy）
+		// <2> 根据 AOP 代理为目标 Bean 创建一个代理对象，并返回
 		return createAopProxy().getProxy(classLoader);
 	}
 

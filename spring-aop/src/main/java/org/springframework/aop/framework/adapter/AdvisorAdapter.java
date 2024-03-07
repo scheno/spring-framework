@@ -45,6 +45,7 @@ public interface AdvisorAdapter {
 	 * @see #getInterceptor(org.springframework.aop.Advisor)
 	 * @see org.springframework.aop.BeforeAdvice
 	 */
+	// 是否支持该类型的 Advice 适配
 	boolean supportsAdvice(Advice advice);
 
 	/**
@@ -58,6 +59,7 @@ public interface AdvisorAdapter {
 	 * no need to cache instances for efficiency, as the AOP framework
 	 * caches advice chains.
 	 */
+	// 获取 Advisor 的 Advice，并包装成对应的 MethodInterceptor 方法拦截器
 	MethodInterceptor getInterceptor(Advisor advisor);
 
 }

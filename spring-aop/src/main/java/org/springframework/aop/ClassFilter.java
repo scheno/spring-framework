@@ -40,12 +40,14 @@ public interface ClassFilter {
 	 * @param clazz the candidate target class
 	 * @return whether the advice should apply to the given target class
 	 */
+	// 匹配这个 Class 类
 	boolean matches(Class<?> clazz);
 
 
 	/**
 	 * Canonical instance of a ClassFilter that matches all classes.
 	 */
+	// 总是匹配通过的类过滤器
 	ClassFilter TRUE = TrueClassFilter.INSTANCE;
 
 }

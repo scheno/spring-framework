@@ -223,30 +223,48 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Pointcut pc, Class<?> targetClass, boolean hasIntroductions) {
 		Assert.notNull(pc, "Pointcut must not be null");
+		// <1> 使用 ClassFilter 匹配 `targetClass`
 		if (!pc.getClassFilter().matches(targetClass)) {
 			return false;
 		}
 
+		// <2> 获取 MethodMatcher 方法匹配器
 		MethodMatcher methodMatcher = pc.getMethodMatcher();
+		// <3> 如果方法匹配器为 TrueMethodMatcher，则默认都通过
 		if (methodMatcher == MethodMatcher.TRUE) {
 			// No need to iterate the methods if we're matching any method anyway...
 			return true;
 		}
 
 		IntroductionAwareMethodMatcher introductionAwareMethodMatcher = null;
+		// <4> 如果方法匹配器为 IntroductionAwareMethodMatcher，则进行转换
+		// AspectJExpressionPointcut 就是 IntroductionAwareMethodMatcher 的实现类
 		if (methodMatcher instanceof IntroductionAwareMethodMatcher) {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
+		/*
+		 * <5> 获取目标类、以及实现的所有接口，并添加至 `classes` 集合中
+		 */
 		Set<Class<?>> classes = new LinkedHashSet<>();
+		// <5.1> 如果不是 java.lang.reflect.Proxy 的子类
 		if (!Proxy.isProxyClass(targetClass)) {
+			// 获取目标类的 Class 对象（如果目标类是 CGLIB 代理对象，则获取其父类的 Class 对象，也就得到了目标类）
 			classes.add(ClassUtils.getUserClass(targetClass));
 		}
+		// <5.2> 获取目标类实现的所有接口，如果目标类本身是一个接口，那么就取这个目标类
 		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
 
+		/*
+		 * <6> 遍历上面的 `classes` 集合
+		 */
 		for (Class<?> clazz : classes) {
+			// <6.1> 获取这个 Class 对象的所有方法
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
+			// <6.2> 遍历上一步获取到的所有方法
 			for (Method method : methods) {
+				// <6.3> 使用方法匹配器对该方法进行匹配，如果匹配成功则直接返回 `true`
+				// AspectJExpressionPointcut 底层就是通过 AspectJ 进行处理的
 				if (introductionAwareMethodMatcher != null ?
 						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
 						methodMatcher.matches(method, targetClass)) {
@@ -255,6 +273,7 @@ public abstract class AopUtils {
 			}
 		}
 
+		// <7> 一个方法都没匹配则返回 `false`，表示这个 Advisor 不能应用到这个 Bean 上面
 		return false;
 	}
 
@@ -282,14 +301,23 @@ public abstract class AopUtils {
 	 */
 	public static boolean canApply(Advisor advisor, Class<?> targetClass, boolean hasIntroductions) {
 		if (advisor instanceof IntroductionAdvisor) {
+			/*
+			 * 从 IntroductionAdvisor 中获取 ClassFilter 类过滤器，判断这个目标类是否符合条件
+			 */
 			return ((IntroductionAdvisor) advisor).getClassFilter().matches(targetClass);
 		}
 		else if (advisor instanceof PointcutAdvisor) {
+			/*
+			 * 根据 Pointcut 中的 ClassFilter 和 MethodFilter 进行过滤
+			 * 例如 Aspect 的实现类 AspectJExpressionPointcut
+			 */
+
 			PointcutAdvisor pca = (PointcutAdvisor) advisor;
 			return canApply(pca.getPointcut(), targetClass, hasIntroductions);
 		}
 		else {
 			// It doesn't have a pointcut so we assume it applies.
+			// 否则，没有 Pointcut，也就是没有筛选条件，则都符合条件
 			return true;
 		}
 	}
@@ -307,21 +335,33 @@ public abstract class AopUtils {
 			return candidateAdvisors;
 		}
 		List<Advisor> eligibleAdvisors = new ArrayList<>();
+		/*
+		 * <1> 遍历所有的 Advisor 对象
+		 * 找到能够应用当前 Bean 的 IntroductionAdvisor 对象，放入 `eligibleAdvisors` 集合中
+		 */
 		for (Advisor candidate : candidateAdvisors) {
-			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
+			if (candidate instanceof IntroductionAdvisor // 如果是 IntroductionAdvisor 类型
+					&& canApply(candidate, clazz)) { // 且能够应用到当前 Bean 中，通过其 ClassFilter 进行过滤
 				eligibleAdvisors.add(candidate);
 			}
 		}
 		boolean hasIntroductions = !eligibleAdvisors.isEmpty();
+		/*
+		 * <2> 遍历所有的 Advisor 对象
+		 * 如果是 IntroductionAdvisor 类型，则会跳过，因为上面已经判断过
+		 * 找到能够应用当前 Bean 的 Advisor 对象，放入 `eligibleAdvisors` 集合中
+		 */
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor) {
 				// already processed
 				continue;
 			}
+			// 判断是否能够应用到这个 Bean 上面
 			if (canApply(candidate, clazz, hasIntroductions)) {
 				eligibleAdvisors.add(candidate);
 			}
 		}
+		// <3> 返回能够应用到当前 Bean 的所有 Advisor 对象
 		return eligibleAdvisors;
 	}
 

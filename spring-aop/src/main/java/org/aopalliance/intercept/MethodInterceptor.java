@@ -55,6 +55,7 @@ public interface MethodInterceptor extends Interceptor {
 	 * @throws Throwable if the interceptors or the target object
 	 * throws an exception
 	 */
+	// 执行 MethodInvocation 调用器
 	@Nullable
 	Object invoke(@Nonnull MethodInvocation invocation) throws Throwable;
 

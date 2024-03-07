@@ -41,6 +41,7 @@ public interface TargetSource extends TargetClassAware {
 	 * might just work with a predetermined target class.
 	 * @return the type of targets returned by this {@link TargetSource}
 	 */
+	// 获取目标对象的 Class 对象
 	@Override
 	@Nullable
 	Class<?> getTargetClass();
@@ -52,6 +53,7 @@ public interface TargetSource extends TargetClassAware {
 	 * @return {@code true} if the target is immutable
 	 * @see #getTarget
 	 */
+	// 是否是静态的，返回 `false` 表示每次获取目标对象都需要进行创建，那么每次创建都需要释放，例如原型模式的 Bean
 	boolean isStatic();
 
 	/**
@@ -61,6 +63,7 @@ public interface TargetSource extends TargetClassAware {
 	 * or {@code null} if there is no actual target instance
 	 * @throws Exception if the target object can't be resolved
 	 */
+	// 获取目标对象
 	@Nullable
 	Object getTarget() throws Exception;
 
@@ -70,6 +73,7 @@ public interface TargetSource extends TargetClassAware {
 	 * @param target object obtained from a call to {@link #getTarget()}
 	 * @throws Exception if the object can't be released
 	 */
+	// 释放目标对象
 	void releaseTarget(Object target) throws Exception;
 
 }

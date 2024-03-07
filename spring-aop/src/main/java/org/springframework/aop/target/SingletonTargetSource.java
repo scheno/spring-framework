@@ -42,6 +42,7 @@ public class SingletonTargetSource implements TargetSource, Serializable {
 
 
 	/** Target cached and invoked using reflection. */
+	// 保存目标对象
 	private final Object target;
 
 
@@ -49,6 +50,7 @@ public class SingletonTargetSource implements TargetSource, Serializable {
 	 * Create a new SingletonTargetSource for the given target.
 	 * @param target the target object
 	 */
+	//  创建实例对象的时候就是设置目标对象
 	public SingletonTargetSource(Object target) {
 		Assert.notNull(target, "Target object must not be null");
 		this.target = target;

@@ -62,6 +62,7 @@ public interface MethodMatcher {
 	 * @param targetClass the target class
 	 * @return whether or not this method matches statically
 	 */
+	// 匹配这个方法
 	boolean matches(Method method, Class<?> targetClass);
 
 	/**
@@ -74,6 +75,7 @@ public interface MethodMatcher {
 	 * {@link #matches(java.lang.reflect.Method, Class, Object[])} method
 	 * is required if static matching passed
 	 */
+	// 当前方法匹配器是否为运行状态
 	boolean isRuntime();
 
 	/**
@@ -90,12 +92,14 @@ public interface MethodMatcher {
 	 * @return whether there's a runtime match
 	 * @see MethodMatcher#matches(Method, Class)
 	 */
+	// 匹配这个方法，并校验参数
 	boolean matches(Method method, Class<?> targetClass, Object... args);
 
 
 	/**
 	 * Canonical instance that matches all methods.
 	 */
+	// 总是匹配通过的方法匹配器
 	MethodMatcher TRUE = TrueMethodMatcher.INSTANCE;
 
 }

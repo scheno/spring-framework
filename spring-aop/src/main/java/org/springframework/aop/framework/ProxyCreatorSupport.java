@@ -102,6 +102,8 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 		if (!this.active) {
 			activate();
 		}
+		// <1> 先获取 AOP 代理工厂，默认为 DefaultAopProxyFactory，只有这个实现
+		// <2> 然后通过它根据创建当前 AdvisedSupport 配置管理器创建一个 AOP 代理（JdkDynamicAopProxy 或者 ObjenesisCglibAopProxy）
 		return getAopProxyFactory().createAopProxy(this);
 	}
 

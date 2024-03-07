@@ -47,23 +47,31 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 
 	private static final Advice EMPTY_ADVICE = new Advice() {};
 
-
+	// AspectJExpressionPointcut 对象
 	private final AspectJExpressionPointcut declaredPointcut;
 
+	// Advice 所在的 Class 对象
 	private final Class<?> declaringClass;
 
+	// Advice 对应的方法名称
 	private final String methodName;
 
+	// Advice 对应的方法参数类型
 	private final Class<?>[] parameterTypes;
 
+	// Advice 对应的方法对象
 	private transient Method aspectJAdviceMethod;
 
+	// Advisor 工厂，用于解析 @AspectJ 注解的 Bean 中的 Advisor
 	private final AspectJAdvisorFactory aspectJAdvisorFactory;
 
+	// 元数据实例构建工厂
 	private final MetadataAwareAspectInstanceFactory aspectInstanceFactory;
 
+	// 定义的顺序
 	private final int declarationOrder;
 
+	// Advice 所在 Bean 的名称
 	private final String aspectName;
 
 	private final Pointcut pointcut;
@@ -84,16 +92,26 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 			Method aspectJAdviceMethod, AspectJAdvisorFactory aspectJAdvisorFactory,
 			MetadataAwareAspectInstanceFactory aspectInstanceFactory, int declarationOrder, String aspectName) {
 
+		// AspectJExpressionPointcut 对象
 		this.declaredPointcut = declaredPointcut;
+		// Advice 所在的 Class 对象
 		this.declaringClass = aspectJAdviceMethod.getDeclaringClass();
+		// Advice 对应的方法名称
 		this.methodName = aspectJAdviceMethod.getName();
+		// Advice 对应的方法参数类型
 		this.parameterTypes = aspectJAdviceMethod.getParameterTypes();
+		// Advice 对应的方法对象
 		this.aspectJAdviceMethod = aspectJAdviceMethod;
+		// Advisor 工厂，用于解析 @AspectJ 注解的 Bean 中的 Advisor
 		this.aspectJAdvisorFactory = aspectJAdvisorFactory;
+		// 元数据实例构建工厂
 		this.aspectInstanceFactory = aspectInstanceFactory;
+		// 定义的顺序
 		this.declarationOrder = declarationOrder;
+		// Advice 所在 Bean 的名称
 		this.aspectName = aspectName;
 
+		// 如果需要延迟初始化，则不立即初始化 Advice 对象
 		if (aspectInstanceFactory.getAspectMetadata().isLazilyInstantiated()) {
 			// Static part of the pointcut is a lazy type.
 			Pointcut preInstantiationPointcut = Pointcuts.union(
@@ -106,10 +124,18 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 					this.declaredPointcut, preInstantiationPointcut, aspectInstanceFactory);
 			this.lazy = true;
 		}
+		// 否则，初始化 Advice 对象
 		else {
 			// A singleton aspect.
+			// AspectJExpressionPointcut 对象
 			this.pointcut = this.declaredPointcut;
 			this.lazy = false;
+			// 根据 AspectJExpressionPointcut 初始化一个 Advice 对象
+			// `@Around`：AspectJAroundAdvice，实现了 MethodInterceptor
+			// `@Before`：AspectJMethodBeforeAdvice
+			// `@After`：AspectJAfterAdvice，实现了 MethodInterceptor
+			// `@AfterReturning`： AspectJAfterAdvice
+			// `@AfterThrowing`：AspectJAfterThrowingAdvice，实现了 MethodInterceptor
 			this.instantiatedAdvice = instantiateAdvice(this.declaredPointcut);
 		}
 	}

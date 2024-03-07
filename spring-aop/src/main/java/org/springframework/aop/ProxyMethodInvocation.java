@@ -39,6 +39,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * Return the proxy that this method invocation was made through.
 	 * @return the original proxy object
 	 */
+	// 返回代理对象
 	Object getProxy();
 
 	/**
@@ -48,6 +49,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * @return an invocable clone of this invocation.
 	 * {@code proceed()} can be called once per clone.
 	 */
+	// 克隆方法
 	MethodInvocation invocableClone();
 
 	/**
@@ -59,6 +61,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * @return an invocable clone of this invocation.
 	 * {@code proceed()} can be called once per clone.
 	 */
+	// 克隆方法，使用参数
 	MethodInvocation invocableClone(Object... arguments);
 
 	/**
@@ -66,6 +69,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * in this chain.
 	 * @param arguments the argument array
 	 */
+	// 设置参数数组
 	void setArguments(Object... arguments);
 
 	/**
@@ -75,6 +79,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * @param key the name of the attribute
 	 * @param value the value of the attribute, or {@code null} to reset it
 	 */
+	// 添加自定义属性
 	void setUserAttribute(String key, @Nullable Object value);
 
 	/**
@@ -83,6 +88,7 @@ public interface ProxyMethodInvocation extends MethodInvocation {
 	 * @return the value of the attribute, or {@code null} if not set
 	 * @see #setUserAttribute
 	 */
+	// 获取自定义属性
 	@Nullable
 	Object getUserAttribute(String key);
 

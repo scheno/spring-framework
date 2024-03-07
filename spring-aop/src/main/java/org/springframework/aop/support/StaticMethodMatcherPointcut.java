@@ -32,6 +32,7 @@ import org.springframework.aop.Pointcut;
  */
 public abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implements Pointcut {
 
+	// 默认情况类过滤器总是匹配通过
 	private ClassFilter classFilter = ClassFilter.TRUE;
 
 
@@ -39,16 +40,18 @@ public abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher im
 	 * Set the {@link ClassFilter} to use for this pointcut.
 	 * Default is {@link ClassFilter#TRUE}.
 	 */
+	// 设置类过滤器
 	public void setClassFilter(ClassFilter classFilter) {
 		this.classFilter = classFilter;
 	}
 
+	// 获取类过滤器
 	@Override
 	public ClassFilter getClassFilter() {
 		return this.classFilter;
 	}
 
-
+	// 返回方法匹配器，就是当前对象，因为当前对象继承的 StaticMethodMatcher 就是一个 MethodMatcher
 	@Override
 	public final MethodMatcher getMethodMatcher() {
 		return this;

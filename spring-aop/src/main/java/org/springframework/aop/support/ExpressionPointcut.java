@@ -30,6 +30,7 @@ public interface ExpressionPointcut extends Pointcut {
 	/**
 	 * Return the String expression for this pointcut.
 	 */
+	// 返回表达式
 	@Nullable
 	String getExpression();
 

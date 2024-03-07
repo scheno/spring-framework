@@ -81,6 +81,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	private static final Log logger = LogFactory.getLog(JdkDynamicAopProxy.class);
 
 	/** Config used to configure this proxy. */
+	/** 代理对象的配置信息，例如保存了 TargetSource 目标类来源、能够应用于目标类的所有 Advisor */
 	private final AdvisedSupport advised;
 
 	private final Class<?>[] proxiedInterfaces;
@@ -88,11 +89,13 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	/**
 	 * Is the {@link #equals} method defined on the proxied interfaces?
 	 */
+	/** 目标对象是否重写了 equals 方法 */
 	private boolean equalsDefined;
 
 	/**
 	 * Is the {@link #hashCode} method defined on the proxied interfaces?
 	 */
+	/** 目标对象是否重写了 hashCode 方法 */
 	private boolean hashCodeDefined;
 
 
@@ -104,11 +107,15 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	 */
 	public JdkDynamicAopProxy(AdvisedSupport config) throws AopConfigException {
 		Assert.notNull(config, "AdvisedSupport must not be null");
-		if (config.getAdvisorCount() == 0 && config.getTargetSource() == AdvisedSupport.EMPTY_TARGET_SOURCE) {
+		if (config.getAdvisorCount() == 0 // 没有 Advisor，表示没有任何动作
+				&& config.getTargetSource() == AdvisedSupport.EMPTY_TARGET_SOURCE) { // 没有来源
 			throw new AopConfigException("No advisors and no TargetSource specified");
 		}
 		this.advised = config;
+		// <1> 获取需要代理的接口（目标类实现的接口，会加上 Spring 内部的几个接口，例如 SpringProxy）
 		this.proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
+		// <2> 判断目标类是否重写了 `equals` 或者 `hashCode` 方法
+		// 没有重写在拦截到这两个方法的时候，会调用当前类的实现
 		findDefinedEqualsAndHashCodeMethods(this.proxiedInterfaces);
 	}
 
@@ -128,6 +135,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating JDK dynamic proxy: " + this.advised.getTargetSource());
 		}
+		// <3> 调用 JDK 的 Proxy#newProxyInstance(..) 方法创建代理对象
+		// 传入的参数就是当前 ClassLoader 类加载器、需要代理的接口、InvocationHandler 实现类
 		return Proxy.newProxyInstance(classLoader, this.proxiedInterfaces, this);
 	}
 

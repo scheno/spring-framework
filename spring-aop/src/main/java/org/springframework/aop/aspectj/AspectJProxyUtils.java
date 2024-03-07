@@ -48,14 +48,19 @@ public abstract class AspectJProxyUtils {
 		// Don't add advisors to an empty list; may indicate that proxying is just not required
 		if (!advisors.isEmpty()) {
 			boolean foundAspectJAdvice = false;
+			// 遍历所有 Advisor
 			for (Advisor advisor : advisors) {
 				// Be careful not to get the Advice without a guard, as this might eagerly
 				// instantiate a non-singleton AspectJ aspect...
+				// 判断这个 Advisor 是否和 AspectJ 相关
 				if (isAspectJAdvice(advisor)) {
 					foundAspectJAdvice = true;
 					break;
 				}
 			}
+			// 如果 `advisors` 涉及到和 AspectJ 相关的 Advisor
+			// 则向其首部添加一个 DefaultPointcutAdvisor 对象，对应的 Advice 为 ExposeInvocationInterceptor 对象
+			// 用于暴露 MethodInvocation 对象（Joinpoint 对象），存储在 ThreadLocal 中，在其他地方则可以使用
 			if (foundAspectJAdvice && !advisors.contains(ExposeInvocationInterceptor.ADVISOR)) {
 				advisors.add(0, ExposeInvocationInterceptor.ADVISOR);
 				return true;
