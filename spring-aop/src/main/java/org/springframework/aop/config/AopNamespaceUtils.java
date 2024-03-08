@@ -74,20 +74,26 @@ public abstract class AopNamespaceUtils {
 	public static void registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 			ParserContext parserContext, Element sourceElement) {
 
+		// <1> 注册 AnnotationAwareAspectJAutoProxyCreator 自动代理对象（如果没有注册的话），设置为优先级最高
 		BeanDefinition beanDefinition = AopConfigUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(
 				parserContext.getRegistry(), parserContext.extractSource(sourceElement));
+		// <2> 则根据 <aop:aspectj-autoproxy /> 标签的配置设置 AnnotationAwareAspectJAutoProxyCreator 的属性
 		useClassProxyingIfNecessary(parserContext.getRegistry(), sourceElement);
+		// <3> 将注册的 BeanDefinition 也放入 `parserContext` 上下文中
 		registerComponentIfNecessary(beanDefinition, parserContext);
 	}
 
 	private static void useClassProxyingIfNecessary(BeanDefinitionRegistry registry, @Nullable Element sourceElement) {
+		// 如果 <aop:aspectj-autoproxy /> 标签不为空
 		if (sourceElement != null) {
 			boolean proxyTargetClass = Boolean.parseBoolean(sourceElement.getAttribute(PROXY_TARGET_CLASS_ATTRIBUTE));
 			if (proxyTargetClass) {
+				// 设置 `proxyTargetClass` 为 `true`（开启类代理，也就是开启 CGLIB 动态代理）
 				AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 			}
 			boolean exposeProxy = Boolean.parseBoolean(sourceElement.getAttribute(EXPOSE_PROXY_ATTRIBUTE));
 			if (exposeProxy) {
+				// 设置 `exposeProxy` 为 `true`（需要暴露代理对象，也就是在 Advice 或者被拦截的方法中可以通过 AopContext 获取代理对象）
 				AopConfigUtils.forceAutoProxyCreatorToExposeProxy(registry);
 			}
 		}

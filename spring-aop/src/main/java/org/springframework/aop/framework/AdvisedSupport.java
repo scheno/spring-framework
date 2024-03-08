@@ -464,13 +464,26 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	 * @return a List of MethodInterceptors (may also include InterceptorAndDynamicMethodMatchers)
 	 */
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(Method method, @Nullable Class<?> targetClass) {
+		// <1> 创建一个方法缓存 Key
 		MethodCacheKey cacheKey = new MethodCacheKey(method);
+		// <2> 尝试从缓存中获取
 		List<Object> cached = this.methodCache.get(cacheKey);
+		// 缓存未命中，则进行下一步处理
 		if (cached == null) {
+			/*
+			 * <3> 获取能够应用于该方法的所有拦截器（有序）
+			 * 筛选出能够应用于该方法的所有 Advisor，并获取对应的 MethodInterceptor，也就是 Advice（如果不是方法拦截器则会包装成对应的 MethodInterceptor）
+			 * 因为 Advisor 是排好序的，所以返回的 MethodInterceptor 也是有序的
+			 *
+			 * 为什么 `cached` 使用 `List<Object>` 存储？
+			 * 因为有些元素是 MethodInterceptor 和 MethodMatcher 的包装对象，并不是 MethodInterceptor
+			 */
 			cached = this.advisorChainFactory.getInterceptorsAndDynamicInterceptionAdvice(
 					this, method, targetClass);
+			// <4> 将该方法对应的拦截器链路放入缓存
 			this.methodCache.put(cacheKey, cached);
 		}
+		// <5> 返回能够应用于该方法的所有拦截器（有序）
 		return cached;
 	}
 

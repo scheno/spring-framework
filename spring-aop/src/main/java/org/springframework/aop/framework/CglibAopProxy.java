@@ -763,39 +763,59 @@ class CglibAopProxy implements AopProxy, Serializable {
 			Object oldProxy = null;
 			boolean setProxyContext = false;
 			Object target = null;
+			// <1> 获取目标类的 TargetSource 对象，用于获取目标类
 			TargetSource targetSource = this.advised.getTargetSource();
 			try {
+				// <2> 如果 `expose-proxy` 属性为 `true`，则需要暴露当前代理对象
 				if (this.advised.exposeProxy) {
 					// Make invocation available if necessary.
+					// <2.1> 向 AopContext 中设置代理对象，并记录 ThreadLocal 之前存放的代理对象
+					// 这样一来，在 Advice 或者被拦截方法中可以通过 AopContext 获取到这个代理对象
 					oldProxy = AopContext.setCurrentProxy(proxy);
+					// <2.2> 标记这个代理对象被暴露了
 					setProxyContext = true;
 				}
 				// Get as late as possible to minimize the time we "own" the target, in case it comes from a pool...
+				// <3> 获取目标对象，以及它的 Class 对象
 				target = targetSource.getTarget();
 				Class<?> targetClass = (target != null ? target.getClass() : null);
+				// <4> 获取能够应用于该方法的所有拦截器（有序）
+				// 不同的 AspectJ 根据 @Order 排序
+				// 同一个 AspectJ 中的 Advice 排序：AspectJAfterThrowingAdvice > AfterReturningAdviceInterceptor > AspectJAfterAdvice > AspectJAroundAdvice > MethodBeforeAdviceInterceptor
 				List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 				Object retVal;
 				// Check whether we only have one InvokerInterceptor: that is,
 				// no real advice, but just reflective invocation of the target.
+				// <5> 如果拦截器链为空，则直接执行目标方法
 				if (chain.isEmpty() && CglibMethodInvocation.isMethodProxyCompatible(method)) {
 					// We can skip creating a MethodInvocation: just invoke the target directly.
 					// Note that the final invoker must be an InvokerInterceptor, so we know
 					// it does nothing but a reflective operation on the target, and no hot
 					// swapping or fancy proxying.
+					// <5.1> 参数适配处理
 					Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+					// <5.2> 执行目标方法（反射），并获取返回结果
 					retVal = invokeMethod(target, method, argsToUse, methodProxy);
 				}
+				// <6> 否则，需要根据拦截器链去执行目标方法
 				else {
 					// We need to create a method invocation...
+					// <6.1> 创建一个方法调用器，并将前面获取到的拦截器链传入其中，该对象就是 Joinpoint 对象
+					// <6.2> 执行目标方法，以及所有的 MethodInterceptor 方法拦截器（Advice 通知器），并获取返回结果
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}
+				// <7> 对最终的返回结果进一步处理（返回结果是否需要为代理对象，返回结果是否不能为空）
 				retVal = processReturnType(proxy, target, method, retVal);
+				// <8> 返回 `retVal` 返回结果
 				return retVal;
 			}
 			finally {
+				// <9> 如果目标对象不为空，且 TargetSource 不是静态的（表示每次都得返回一个新的目标对象）
+				// 那么需要释放当前获取到的目标对象，通常情况下我们的单例 Bean 对应的都是 SingletonTargetSource，不需要释放
 				if (target != null && !targetSource.isStatic()) {
 					targetSource.releaseTarget(target);
 				}
+				// <10> 如果暴露了当前代理对象，则需要将之前的代理对象重新设置到 ThreadLocal 中
 				if (setProxyContext) {
 					// Restore old proxy.
 					AopContext.setCurrentProxy(oldProxy);
@@ -835,6 +855,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 			super(proxy, target, method, arguments, targetClass, interceptorsAndDynamicMethodMatchers);
 
 			// Only use method proxy for public methods not derived from java.lang.Object
+			// 设置代理方法对象
 			this.methodProxy = (isMethodProxyCompatible(method) ? methodProxy : null);
 		}
 
@@ -872,19 +893,23 @@ class CglibAopProxy implements AopProxy, Serializable {
 		protected Object invokeJoinpoint() throws Throwable {
 			if (this.methodProxy != null) {
 				try {
+					// 执行代理方法对象（反射）
 					return this.methodProxy.invoke(this.target, this.arguments);
 				}
 				catch (CodeGenerationException ex) {
 					logFastClassGenerationFailure(this.method);
 				}
 			}
+			// 执行目标方法对象（反射）
 			return super.invokeJoinpoint();
 		}
 
 		static boolean isMethodProxyCompatible(Method method) {
-			return (Modifier.isPublic(method.getModifiers()) &&
-					method.getDeclaringClass() != Object.class && !AopUtils.isEqualsMethod(method) &&
-					!AopUtils.isHashCodeMethod(method) && !AopUtils.isToStringMethod(method));
+			return (Modifier.isPublic(method.getModifiers()) // 方法被 public 修饰
+					&& method.getDeclaringClass() != Object.class // 不是 Object 中的方法
+					&& !AopUtils.isEqualsMethod(method) // 不是 `equals` 方法
+					&& !AopUtils.isHashCodeMethod(method) // 不是 `hashCode` 方法
+					&& !AopUtils.isToStringMethod(method)); // 不是 `toString` 方法
 		}
 
 		static void logFastClassGenerationFailure(Method method) {

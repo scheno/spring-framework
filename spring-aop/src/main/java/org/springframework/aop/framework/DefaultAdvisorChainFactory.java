@@ -58,19 +58,31 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 
 		// This is somewhat tricky... We have to process introductions first,
 		// but we need to preserve order in the ultimate list.
+		// <1> 获取 DefaultAdvisorAdapterRegistry 实例对象
 		AdvisorAdapterRegistry registry = GlobalAdvisorAdapterRegistry.getInstance();
+		// <2> 获取能够应用到 `targetClass` 的 Advisor 们
 		Advisor[] advisors = config.getAdvisors();
 		List<Object> interceptorList = new ArrayList<>(advisors.length);
 		Class<?> actualClass = (targetClass != null ? targetClass : method.getDeclaringClass());
 		// 查看是否包含 IntroductionAdvisor
 		Boolean hasIntroductions = null;
 
+		// <3> 遍历上一步获取到的 Advisor 们
+		// 筛选出哪些 Advisor 需要处理当前被拦截的 `method`，并获取对应的 MethodInterceptor（Advice，如果不是方法拦截器则会包装成对应的 MethodInterceptor）
 		for (Advisor advisor : advisors) {
+			/*
+			 * <3.1> 如果是 PointcutAdvisor 类型，则需要对目标对象的类型和被拦截的方法进行匹配
+			 */
 			if (advisor instanceof PointcutAdvisor) {
 				// Add it conditionally.
 				PointcutAdvisor pointcutAdvisor = (PointcutAdvisor) advisor;
-				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
-					// 检查当前 advisor 的 pointcut 是否可以匹配当前方法
+				/*
+				 * <3.1.1> 判断这个 PointcutAdvisor 是否匹配目标对象的类型，无法匹配则跳过
+				 */
+				if (config.isPreFiltered()  // AdvisedSupport 是否已经过滤过目标对象的类型
+						|| pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) { // 调用 Pointcut 的 ClassFilter 对目标对象的类型进行匹配
+					// <3.1.2> 获取 Pointcut 的 MethodMatcher 方法匹配器对该方法进行匹配
+					// 参考 AspectJExpressionPointcut，底层借助于 AspectJ 的处理
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
 					boolean match;
 					if (mm instanceof IntroductionAwareMethodMatcher) {
@@ -83,36 +95,57 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 					else {
 						match = mm.matches(method, actualClass);
 					}
+					/*
+					 * <3.1.3> 如果这个方法匹配成功，则进行下面的处理
+					 */
 					if (match) {
-						// 这个地方这两个方法的位置可以互换下
-						// 将 Advisor 转化成 Interceptor
+						// <3.1.4> 从 Advisor 中获取 Advice，并包装成 MethodInterceptor 拦截器对象（如果不是的话）
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
+						// <3.1.5> 若 MethodMatcher 的 `isRuntime()` 返回 `true`，则表明 MethodMatcher 要在运行时做一些检测
 						if (mm.isRuntime()) {
 							// Creating a new object instance in the getInterceptors() method
 							// isn't a problem as we normally cache created chains.
 							for (MethodInterceptor interceptor : interceptors) {
+								// <3.1.5.1> 将上面获取到的 MethodInterceptor 和 MethodMatcher 包装成一个对象，并添加至 `interceptorList`
 								interceptorList.add(new InterceptorAndDynamicMethodMatcher(interceptor, mm));
 							}
 						}
+						// <3.1.6> 否则，直接将 MethodInterceptor 们添加至 `interceptorList`
 						else {
 							interceptorList.addAll(Arrays.asList(interceptors));
 						}
 					}
 				}
 			}
+			/*
+			 * <3.2> 否则，如果是 IntroductionAdvisor 类型，则需要对目标对象的类型进行匹配
+			 */
 			else if (advisor instanceof IntroductionAdvisor) {
 				IntroductionAdvisor ia = (IntroductionAdvisor) advisor;
-				if (config.isPreFiltered() || ia.getClassFilter().matches(actualClass)) {
+				/*
+				 * <3.2.1> 判断这个 IntroductionAdvisor 是否匹配目标对象的类型，无法匹配则跳过
+				 */
+				if (config.isPreFiltered() // AdvisedSupport 是否已经过滤过目标对象的类型
+						|| ia.getClassFilter().matches(actualClass)) { // 调用 Pointcut 的 ClassFilter 对目标对象的类型进行匹配
+					// <3.2.2> 从 Advisor 中获取 Advice，并包装成 MethodInterceptor 拦截器对象（如果不是的话）
 					Interceptor[] interceptors = registry.getInterceptors(advisor);
+					// <3.2.3> 直接将 MethodInterceptor 们添加至 `interceptorList`
 					interceptorList.addAll(Arrays.asList(interceptors));
 				}
 			}
+			/*
+			 * <3.3> 否则，不需要对目标对象的类型和被拦截的方法进行匹配
+			 */
 			else {
+				// <3.3.1> 从 Advisor 中获取 Advice，并包装成 MethodInterceptor 拦截器对象（如果不是的话）
 				Interceptor[] interceptors = registry.getInterceptors(advisor);
+				// <3.3.2> 直接将 MethodInterceptor 们添加至 `interceptorList`
 				interceptorList.addAll(Arrays.asList(interceptors));
 			}
 		}
 
+		// <4> 返回 `interceptorList` 所有的 MethodInterceptor 拦截器
+		// 因为 Advisor 是排好序的，所以这里的 `interceptorList` 是有序的
 		return interceptorList;
 	}
 

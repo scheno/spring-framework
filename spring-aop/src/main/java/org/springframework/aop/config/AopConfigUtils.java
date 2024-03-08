@@ -85,6 +85,7 @@ public abstract class AopConfigUtils {
 	public static BeanDefinition registerAspectJAutoProxyCreatorIfNecessary(
 			BeanDefinitionRegistry registry, @Nullable Object source) {
 
+		// 注册 AnnotationAwareAspectJAutoProxyCreator Bean
 		return registerOrEscalateApcAsRequired(AspectJAwareAdvisorAutoProxyCreator.class, registry, source);
 	}
 
@@ -120,23 +121,37 @@ public abstract class AopConfigUtils {
 
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 
+		// <1> 如果 `org.springframework.aop.config.internalAutoProxyCreator` 已注册
 		if (registry.containsBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME)) {
+			// <1.1> 获取对应的 BeanDefinition 对象
 			BeanDefinition apcDefinition = registry.getBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME);
+			// <1.2> 如果已注册的 `internalAutoProxyCreator` 和入参的 Class 不相等，说明可能是继承关系
 			if (!cls.getName().equals(apcDefinition.getBeanClassName())) {
+				// <1.2.1> 获取已注册的 `internalAutoProxyCreator` 的优先级
 				int currentPriority = findPriorityForClass(apcDefinition.getBeanClassName());
+				// <1.2.2> 获取需要注册的 `internalAutoProxyCreator` 的优先级
 				int requiredPriority = findPriorityForClass(cls);
+				// 三者都是 AbstractAutoProxyCreator 自动代理对象的子类
 				if (currentPriority < requiredPriority) {
+					// <1.2.3> 如果需要注册的优先级更高，那取代已注册的 Class 对象
 					apcDefinition.setBeanClassName(cls.getName());
 				}
 			}
+			// <1.3> 因为已注册，则返回 `null`
 			return null;
 		}
 
+		// <2> 没有注册，则创建一个 RootBeanDefinition 对象进行注册
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(cls);
+		// <3> 设置来源
 		beanDefinition.setSource(source);
+		// <4> 设置为最高优先级
 		beanDefinition.getPropertyValues().add("order", Ordered.HIGHEST_PRECEDENCE);
+		// <5> 设置角色为**ROLE_INFRASTRUCTURE**，表示是 Spring 框架内部的 Bean
 		beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+		// <6> 注册自动代理的 Bean，名称为 `org.springframework.aop.config.internalAutoProxyCreator`
 		registry.registerBeanDefinition(AUTO_PROXY_CREATOR_BEAN_NAME, beanDefinition);
+		// <7> 返回刚注册的 RootBeanDefinition 对象
 		return beanDefinition;
 	}
 
