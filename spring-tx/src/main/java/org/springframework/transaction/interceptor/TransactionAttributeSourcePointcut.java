@@ -43,7 +43,11 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 
 	@Override
 	public boolean matches(Method method, Class<?> targetClass) {
+		// <2 获取 AnnotationTransactionAttributeSource 对象
 		TransactionAttributeSource tas = getTransactionAttributeSource();
+		// <3> 解析该方法相应的 @Transactional 注解，并将元信息封装成一个 TransactionAttribute 对象
+		// 且缓存至 AnnotationTransactionAttributeSource 对象中
+		// <4> 如果有对应的 TransactionAttribute 对象，则表示匹配，需要进行事务的拦截处理
 		return (tas == null || tas.getTransactionAttribute(method, targetClass) != null);
 	}
 
@@ -86,12 +90,17 @@ abstract class TransactionAttributeSourcePointcut extends StaticMethodMatcherPoi
 
 		@Override
 		public boolean matches(Class<?> clazz) {
+			// <1> 目标类是 Spring 内部的事务相关类，则跳过，不需要创建代理对象
 			if (TransactionalProxy.class.isAssignableFrom(clazz) ||
 					TransactionManager.class.isAssignableFrom(clazz) ||
 					PersistenceExceptionTranslator.class.isAssignableFrom(clazz)) {
 				return false;
 			}
+			// <2 获取 AnnotationTransactionAttributeSource 对象
 			TransactionAttributeSource tas = getTransactionAttributeSource();
+			// <3> 解析该方法相应的 @Transactional 注解，并将元信息封装成一个 TransactionAttribute 对象
+			// 且缓存至 AnnotationTransactionAttributeSource 对象中
+			// <4> 如果有对应的 TransactionAttribute 对象，则表示匹配，需要进行事务的拦截处理
 			return (tas == null || tas.isCandidateClass(clazz));
 		}
 	}
